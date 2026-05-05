@@ -159,7 +159,7 @@ async def post_conversation_update(room_name: str, payload: dict):
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             await client.post(
-                "http://127.0.0.1:8000/conversation-update",
+                "http://api:8000/conversation-update",
                 json={"room_name": room_name, **payload},
             )
     except Exception as e:
@@ -465,7 +465,7 @@ async def handle_user_speech(ctx, session, text):
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             res = await client.get(
-                f"http://127.0.0.1:8000/conversation-status/{ctx.room.name}"
+                f"http://api:8000/conversation-status/{ctx.room.name}"
             )
             data = res.json()
             manual_phone = data.get("manual_phone", "")
@@ -1275,13 +1275,13 @@ async def poll_for_injections(ctx, session):
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 res = await client.get(
-                    f"http://127.0.0.1:8000/conversation-status/{ctx.room.name}"
+                    f"http://api:8000/conversation-status/{ctx.room.name}"
                 )
                 data = res.json()
                 tts_text = data.get("tts_speak_text", "")
                 if tts_text:
                     await client.post(
-                        "http://127.0.0.1:8000/conversation-update",
+                        "http://api:8000/conversation-update",
                         json={"room_name": ctx.room.name, "tts_speak_text": ""},
                     )
                     await session.say(tts_text, allow_interruptions=False)
@@ -1297,7 +1297,7 @@ async def poll_for_injections(ctx, session):
                             print(f">>> Injected message: {message}")
                             # Clear only after confirming we can process it
                             await client.post(
-                                "http://127.0.0.1:8000/conversation-update",
+                                "http://api:8000/conversation-update",
                                 json={
                                     "room_name": ctx.room.name,
                                     "has_injection": False,
