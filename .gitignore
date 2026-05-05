@@ -1,0 +1,48 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+.next/
+
+# Vite build output
+frontend/dist/
+
+# Claude Code session files and AI tool instructions
+.claude/
+AGENTS.md
+CLAUDE.md
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Secrets / keys
+*.pem
+*.key
