@@ -365,6 +365,7 @@ export default function CallPage({ onCallActiveChange }) {
   // ── Start call ────────────────────────────────────────────────────
 
   async function handleStartCall() {
+    resetConversation();
     setIsLoading(true);
     beginAssistantWait("Starting secure voice room");
     addToolEvent("Call Started");
