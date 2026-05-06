@@ -139,22 +139,7 @@ export function useConversation() {
           setEmergencyOption(data.emergency_option)
         }
 
-        const response = data.last_response || ''
-        const r = response.toLowerCase()
         const stage = data.conversation_stage || 'GREETING'
-
-        const asksForPhone =
-          r.includes('phone number') || r.includes('contact number') ||
-          r.includes('mobile number') || r.includes('10-digit') ||
-          r.includes('share your number') || r.includes('your phone')
-
-        const asksForName =
-          r.includes('may i know your name') || r.includes('your name please') ||
-          r.includes('please share your name') || r.includes('tell me your name') ||
-          r.includes('know your name') || r.includes('what is your name') ||
-          r.includes("what's your name") || r.includes('say your name') ||
-          r.includes('type it in the box') ||
-          r.includes('your full name') || r.includes('full name please')
 
         if (data.last_response) {
           setLastResponseAt(Date.now())
@@ -179,21 +164,17 @@ export function useConversation() {
         const isEnded            = stage === 'END'
         const doctorsLoading     = toolsCalled.includes('get_doctors')
 
-        // ── Name input: show until the patient's name is actually collected ─
-        // Keyword/stage detection breaks when the agent responds to noise with
-        // a clarification message (no name keywords, stage already "ACTIVE").
-        // Using patientNameKnown as the gate is far more reliable.
-        const patientNameKnown = !!(data.patient?.name)
+        // ── Use explicit backend flags set by agent_worker ────────────────────
+        // The backend's _is_name_collection_stage() / _is_phone_collection_stage()
+        // check conversation history directly, making this far more reliable than
+        // keyword matching against last_response text.
         setShowNameInput(
-          !isEnded &&
-          !userJustIdentified &&
-          !isIdentifiedStage &&
-          !asksForPhone &&
-          (asksForName || !patientNameKnown)
+          !isEnded && !userJustIdentified && !isIdentifiedStage &&
+          data.ui_show_name_input === true
         )
 
-        // ── Phone input: always set explicitly on every poll ──────────────────
-        const shouldShowPhone = !isEnded && !userJustIdentified && !doctorsLoading && asksForPhone
+        const shouldShowPhone = !isEnded && !userJustIdentified && !doctorsLoading &&
+          data.ui_show_phone_input === true
         setShowPhoneInput(shouldShowPhone)
         if (userJustIdentified) setManualPhone('')
         if (toolsCalled.includes('get_doctors')) {

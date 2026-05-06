@@ -1154,18 +1154,20 @@ Confirmed appointments so far: {state.get("appointments_made", [])}""",
         await post_conversation_update(
             ctx.room.name,
             {
-                "last_response":      response_text,
-                "conversation_stage": "ACTIVE",
-                "current_intent":     "",
-                "tokens_used":        tokens_used,
-                "cost_usd":           cost_usd,
-                "appointments_made":  appointments_made,
-                "patient":            patient,
-                "appointment_slip":   appointment_slip,
-                "tools_called":       tools_called,
-                "slot_grid":          slot_grid,
+                "last_response":       response_text,
+                "conversation_stage":  "ACTIVE",
+                "current_intent":      "",
+                "tokens_used":         tokens_used,
+                "cost_usd":            cost_usd,
+                "appointments_made":   appointments_made,
+                "patient":             patient,
+                "appointment_slip":    appointment_slip,
+                "tools_called":        tools_called,
+                "slot_grid":           slot_grid,
+                "ui_show_name_input":  _is_name_collection_stage(),
+                "ui_show_phone_input": _is_phone_collection_stage(),
                 # Always sync history so /voice/stop can use it as transcript
-                "transcript":         room_states[ctx.room.name].get("history", []),
+                "transcript":          room_states[ctx.room.name].get("history", []),
             },
         )
 
@@ -1345,6 +1347,8 @@ async def entrypoint(ctx: agents.JobContext):
         "conversation_stage": "GREETING",
         "has_injection": False,
         "injected_message": "",
+        "ui_show_name_input": False,
+        "ui_show_phone_input": False,
     })
 
     db_url = os.getenv("SUPABASE_DB_URL", "")
@@ -1536,16 +1540,18 @@ async def entrypoint(ctx: agents.JobContext):
     await post_conversation_update(
         ctx.room.name,
         {
-            "last_response": greeting,
-            "conversation_stage": "GREETING",
-            "current_intent": "",
-            "tokens_used": 0,
-            "cost_usd": 0.0,
-            "appointments_made": [],
-            "tools_called": [],
-            "patient": {},
-            "transcript": initial_history,
-            "manual_phone": "",
+            "last_response":       greeting,
+            "conversation_stage":  "GREETING",
+            "current_intent":      "",
+            "tokens_used":         0,
+            "cost_usd":            0.0,
+            "appointments_made":   [],
+            "tools_called":        [],
+            "patient":             {},
+            "transcript":          initial_history,
+            "manual_phone":        "",
+            "ui_show_name_input":  True,
+            "ui_show_phone_input": False,
         },
     )
     await session.say(greeting, allow_interruptions=False)
