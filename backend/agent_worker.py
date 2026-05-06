@@ -487,7 +487,8 @@ async def handle_user_speech(ctx, session, text):
         return
 
     if state.get("processing", False):
-        print(f">>> Skipping (already processing): {text[:30]}")
+        print(f">>> Queuing (already processing): {text[:30]}")
+        room_states[ctx.room.name].setdefault("speech_queue", []).append(text)
         return
 
     state["processing"] = True
@@ -1320,6 +1321,12 @@ Confirmed appointments so far: {state.get("appointments_made", [])}""",
                 print(f">>> Fallback say failed: {_say_err}")
     finally:
         room_states[ctx.room.name]["processing"] = False
+        # Drain any speech that arrived while this turn was processing
+        _queued = room_states.get(ctx.room.name, {}).pop("speech_queue", [])
+        if _queued:
+            _combined = " ".join(_queued)
+            print(f">>> Draining queued speech: '{_combined[:60]}'")
+            asyncio.create_task(handle_user_speech(ctx, session, _combined))
 
 
 async def poll_for_injections(ctx, session):
@@ -1418,6 +1425,7 @@ async def entrypoint(ctx: agents.JobContext):
         "appointment_slip": {},
         "appointments_checked": False,
         "pending_confirmation": False,
+        "speech_queue": [],
     }
 
     # Phone-number accumulation state (closure vars, one per room session)
