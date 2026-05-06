@@ -55,6 +55,28 @@ def _is_name_collection_stage(room_name: str) -> bool:
     return False
 
 
+def _strip_name_echo(text: str) -> str:
+    """Drop the first sentence if it is a name acknowledgment (e.g. 'Thank you, Ritwik!').
+
+    The receptionist prompt forbids echoing the captured name, but LLMs routinely
+    add a 'Thank you, [Name]!' opener anyway.  Post-processing here is the reliable
+    safety net: if the first sentence of the response looks like an acknowledgment,
+    strip it and return only the phone-request part.
+    """
+    parts = re.split(r'(?<=[.!?])\s+', text.strip(), maxsplit=1)
+    if len(parts) < 2:
+        return text  # single sentence — can't strip safely
+    first_lower = parts[0].lower()
+    ack_words = (
+        'thank you', 'thanks', 'nice to meet', 'got it',
+        'great', 'perfect', 'noted', 'wonderful', 'i see',
+    )
+    if any(w in first_lower for w in ack_words):
+        print(f">>> Stripped name-echo sentence: '{parts[0]}'")
+        return parts[1].strip()
+    return text
+
+
 END_PHRASES = (
     "no",
     "no thanks",
@@ -477,6 +499,8 @@ async def handle_user_speech(ctx, session, text):
     _early_history.append({"role": "user", "content": text})
     state["history"] = _early_history
     room_states[ctx.room.name]["history"] = _early_history
+    # Capture stage BEFORE LangGraph runs so we can strip name-echo from the response
+    _was_name_stage = _is_name_collection_stage(ctx.room.name)
     asyncio.create_task(post_conversation_update(ctx.room.name, {
         "transcript": _early_history,
         "patient": state.get("patient", {}),
@@ -1202,6 +1226,10 @@ Confirmed appointments so far: {state.get("appointments_made", [])}""",
             response_text = "I'm sorry, I didn't quite catch that. Could you please repeat?"
             print(">>> Repeated response detected — replacing with clarification")
         room_states[ctx.room.name]["last_agent_response"] = response_text
+
+        # Strip "Thank you, [Name]!" opener to avoid echoing misheard names
+        if _was_name_stage:
+            response_text = _strip_name_echo(response_text)
 
         await session.say(response_text, allow_interruptions=False)
 
