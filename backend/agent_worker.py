@@ -32,6 +32,29 @@ import httpx
 room_graphs = {}
 room_states = {}
 
+_PHONE_KEYWORDS = ("phone number", "10-digit", "mobile", "contact number", "digit")
+_NAME_KEYWORDS  = ("your name", "may i know", "know your name", "what is your name",
+                   "what's your name", "say it out loud or type it in the box on screen")
+
+
+def _is_phone_collection_stage(room_name: str) -> bool:
+    history = room_states.get(room_name, {}).get("history", [])
+    for msg in reversed(history):
+        if msg.get("role") == "assistant":
+            last = msg.get("content", "").lower()
+            return any(kw in last for kw in _PHONE_KEYWORDS)
+    return False
+
+
+def _is_name_collection_stage(room_name: str) -> bool:
+    history = room_states.get(room_name, {}).get("history", [])
+    for msg in reversed(history):
+        if msg.get("role") == "assistant":
+            last = msg.get("content", "").lower()
+            return any(kw in last for kw in _NAME_KEYWORDS)
+    return False
+
+
 END_PHRASES = (
     "no",
     "no thanks",
@@ -1164,8 +1187,8 @@ Confirmed appointments so far: {state.get("appointments_made", [])}""",
                 "appointment_slip":    appointment_slip,
                 "tools_called":        tools_called,
                 "slot_grid":           slot_grid,
-                "ui_show_name_input":  _is_name_collection_stage(),
-                "ui_show_phone_input": _is_phone_collection_stage(),
+                "ui_show_name_input":  _is_name_collection_stage(ctx.room.name),
+                "ui_show_phone_input": _is_phone_collection_stage(ctx.room.name),
                 # Always sync history so /voice/stop can use it as transcript
                 "transcript":          room_states[ctx.room.name].get("history", []),
             },
@@ -1373,9 +1396,6 @@ async def entrypoint(ctx: agents.JobContext):
     _phone_debounce_task: list = [None]
     _phone_pending: list = []
 
-    _PHONE_KEYWORDS = ("phone number", "10-digit", "mobile", "contact number", "digit")
-    _NAME_KEYWORDS  = ("your name", "may i know", "know your name", "what is your name",
-                       "what's your name", "say it out loud or type it in the box on screen")
     # Spoken digit words used to count how many digits the user has said
     _DIGIT_WORDS = frozenset({
         "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "oh",
@@ -1402,22 +1422,6 @@ async def entrypoint(ctx: agents.JobContext):
         turn_handling={"interruption": {"enabled": False}},
     )
 
-    def _is_phone_collection_stage() -> bool:
-        history = room_states.get(ctx.room.name, {}).get("history", [])
-        for msg in reversed(history):
-            if msg.get("role") == "assistant":
-                last = msg.get("content", "").lower()
-                return any(kw in last for kw in _PHONE_KEYWORDS)
-        return False
-
-    def _is_name_collection_stage() -> bool:
-        history = room_states.get(ctx.room.name, {}).get("history", [])
-        # Only the very first assistant turn asks for name
-        for msg in reversed(history):
-            if msg.get("role") == "assistant":
-                last = msg.get("content", "").lower()
-                return any(kw in last for kw in _NAME_KEYWORDS)
-        return False
 
     def _count_digit_words(t: str) -> int:
         return sum(1 for w in re.sub(r"[^\w\s]", "", t.lower()).split() if w in _DIGIT_WORDS)
@@ -1455,7 +1459,7 @@ async def entrypoint(ctx: agents.JobContext):
             if not text or len(text) < 3:
                 return
 
-            if _is_phone_collection_stage():
+            if _is_phone_collection_stage(ctx.room.name):
                 # Accumulate chunks until we have 10 digit-words (a complete
                 # Indian phone number), regardless of how slowly the user speaks.
                 _phone_pending.append(text)
@@ -1483,7 +1487,7 @@ async def entrypoint(ctx: agents.JobContext):
                     _phone_debounce_task[0] = asyncio.create_task(_fallback())
                 return
 
-            if _is_name_collection_stage():
+            if _is_name_collection_stage(ctx.room.name):
                 # Buffer name fragments so "My name is [pause] Ritwik" arrives
                 # as one combined turn instead of two separate ones.
                 _name_pending.append(text)
