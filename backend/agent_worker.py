@@ -1136,6 +1136,10 @@ Confirmed appointments so far: {state.get("appointments_made", [])}""",
         # contains confirmation/doctor-selection words, or the previous assistant turn
         # was already a recommendation question.
         if fetch_slots_called and slot_grid and not get_doctors_called:
+            # If the slot calendar was already on screen before this turn, the user is
+            # picking a date/time — never intercept as a premature recommendation.
+            _slot_already_shown = bool(state.get("slot_grid"))
+
             _confirm_re = re.compile(
                 r'\b(yes|yeah|yep|sure|okay|ok|go ahead|confirm|correct|please|'
                 r'dr\.?|doctor)\b',
@@ -1153,9 +1157,12 @@ Confirmed appointments so far: {state.get("appointments_made", [])}""",
                 "shall i check" in _prev_assistant
                 or "shall i show" in _prev_assistant
                 or "available slots for you" in _prev_assistant
+                or "shown the available" in _prev_assistant
+                or "pick a date" in _prev_assistant
+                or "slots on the screen" in _prev_assistant
             )
 
-            if not _user_confirmed and not _was_recommendation:
+            if not _user_confirmed and not _was_recommendation and not _slot_already_shown:
                 # LLM jumped straight to slots without confirmation — intercept.
                 _rec_doctor = slot_grid.get("doctor_name", "this doctor")
                 _rec_spec   = slot_grid.get("specialization", "specialist")
