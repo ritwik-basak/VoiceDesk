@@ -400,12 +400,15 @@ export default function CallPage({ onCallActiveChange }) {
         }),
       });
 
-      // 4. Kick off first conversation turn
-      await sendMessage("Hello", threadIdRef.current, true);
-      isFirstTurnRef.current = false;
-
-      // 5. Start polling for agent responses
+      // 4. Start polling immediately — do NOT wait for sendMessage.
+      // sendMessage hits the text LangGraph which can be slow or fail; blocking
+      // on it meant polling never started if it errored, leaving the UI frozen.
       pollingRef.current = startPolling(roomName);
+
+      // 5. Fire text-graph initialisation in the background (non-blocking)
+      sendMessage("Hello", threadIdRef.current, true)
+        .then(() => { isFirstTurnRef.current = false; })
+        .catch(err => console.warn("Text graph init error (non-fatal):", err));
     } catch (err) {
       console.error("Start call error:", err);
       setAssistantPending(false);
