@@ -1,6 +1,6 @@
 <div align="center">
 
-# VoiceDesk — Hospital Appointment Agent
+# VoiceDesk — Agentic Voice AI for Conversational Healthcare Automation
 
 ## Real-time voice agent for hospital appointment booking with symptom-based doctor recommendation, emergency services, and full observability
 
