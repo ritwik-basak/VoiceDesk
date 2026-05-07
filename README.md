@@ -5,7 +5,6 @@
 ## Real-time voice agent for hospital appointment booking with symptom-based doctor recommendation, emergency services, and full observability
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-↗-00C853?style=for-the-badge)](https://voice-desk-hazel.vercel.app/)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-↗-00C853?style=flat)](https://voice-desk-hazel.vercel.app/)
 
 </div>
 
