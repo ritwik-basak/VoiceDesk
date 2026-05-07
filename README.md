@@ -4,6 +4,8 @@
 
 ## Real-time voice agent for hospital appointment booking with symptom-based doctor recommendation, emergency services, and full observability
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-↗-00C853?style=for-the-badge)](https://voice-desk-hazel.vercel.app/)
+
 </div>
 
 A production-ready AI voice agent that lets patients book, cancel, and manage hospital appointments entirely by speaking. The agent identifies returning patients, collects symptoms to recommend the right specialist, detects intent, finds the earliest available slot, and confirms bookings — all in a natural phone-like conversation over a live WebRTC audio stream. Includes an emergency escalation path with ambulance routing and human handoff.
